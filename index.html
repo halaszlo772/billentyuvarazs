@@ -59,7 +59,7 @@
       gap: 10px;
       margin: 8px 0;
       width: 100%;
-      max-width: 800px;
+      max-width: 850px;
     }
 
     .button-group {
@@ -291,7 +291,7 @@
       border: 3px solid var(--accent-yellow);
       border-radius: 20px;
       padding: 25px;
-      max-width: 450px;
+      max-width: 500px;
       width: 90%;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -330,7 +330,7 @@
       width: 100%;
       border-collapse: collapse;
       margin: 15px 0;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
     .leaderboard-table th, .leaderboard-table td {
@@ -367,11 +367,12 @@
     </div>
 
     <!-- Szint Választó -->
-    <div class="button-group">
+    <div class="button-group" id="levelGroup">
       <button class="btn level-btn active" onclick="setLevel(1)">1. Szint: Alap gombok</button>
       <button class="btn level-btn" onclick="setLevel(2)">2. Szint: Betűk & Számok</button>
       <button class="btn level-btn" onclick="setLevel(3)">3. Szint: Nagybetűk & Ékezetek</button>
       <button class="btn level-btn" onclick="setLevel(4)">4. Szint: Speciális jelek (!, #)</button>
+      <button class="btn level-btn" onclick="setLevel(5)">5. Szint: 🔀 Vegyes (Minden gomb)</button>
     </div>
 
     <!-- Extra Akciók -->
@@ -485,13 +486,14 @@
 
   <!-- Ranglista Megtekintése Modal -->
   <div class="modal-overlay" id="leaderboardModal">
-    <div class="modal-card" style="max-width: 550px;">
+    <div class="modal-card" style="max-width: 580px;">
       <h2>🏆 Ranglista</h2>
       <div class="button-group" style="margin-bottom:10px;">
         <button class="btn level-btn active" id="lbLvl1" onclick="renderLeaderboard(1)">1. Szint</button>
         <button class="btn level-btn" id="lbLvl2" onclick="renderLeaderboard(2)">2. Szint</button>
         <button class="btn level-btn" id="lbLvl3" onclick="renderLeaderboard(3)">3. Szint</button>
         <button class="btn level-btn" id="lbLvl4" onclick="renderLeaderboard(4)">4. Szint</button>
+        <button class="btn level-btn" id="lbLvl5" onclick="renderLeaderboard(5)">5. Vegyes</button>
       </div>
       <div id="leaderboardContent">
         <!-- Táblázat Dinamikusan -->
@@ -584,6 +586,9 @@
       ]
     };
 
+    // 5. Szint: Az 1–4. szint összes elemét egyesíti
+    levels[5] = [...levels[1], ...levels[2], ...levels[3], ...levels[4]];
+
     // --- ÁLLAPOT VÁLTOZÓK ---
     let currentLevel = 1;
     let currentMode = 'practice'; // 'practice', 'time_trial', 'sprint'
@@ -633,8 +638,8 @@
 
     function setLevel(lvl) {
       currentLevel = lvl;
-      document.querySelectorAll('.level-btn').forEach((btn, idx) => {
-        if (idx < 4) btn.classList.toggle('active', idx + 1 === lvl);
+      document.querySelectorAll('#levelGroup .level-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx + 1 === lvl);
       });
       resetGame();
     }
@@ -817,7 +822,7 @@
 
     // --- LOCALSTORAGE MŰVELETEK ---
     function getLeaderboard() {
-      return JSON.parse(localStorage.getItem('keyboard_game_lb')) || { 1: [], 2: [], 3: [], 4: [] };
+      return JSON.parse(localStorage.getItem('keyboard_game_lb')) || { 1: [], 2: [], 3: [], 4: [], 5: [] };
     }
 
     function saveToLeaderboard(res) {
@@ -850,7 +855,7 @@
 
     function renderLeaderboard(lvl) {
       activeLbLevel = lvl;
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= 5; i++) {
         const btn = document.getElementById(`lbLvl${i}`);
         if (btn) btn.classList.toggle('active', i === lvl);
       }
