@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billentyűzet Mester - Gyerekjáték</title>
+  <style>
+    :root {
+      --bg: #1e1e2e;
+      --card-bg: #2b2b3f;
+      --accent: #ff007f;
+      --accent-yellow: #ffcc00;
+      --green: #00e676;
+      --blue: #00d2ff;
+      --text: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #181824 0%, #2a2a40 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: var(--accent-yellow);
+      text-shadow: 0 4px 10px rgba(255, 204, 0, 0.3);
+      margin-bottom: 2px;
+    }
+
+    p.subtitle {
+      color: #a0a0c0;
+      font-size: 0.95rem;
+    }
+
+    /* Vezérlő gombok konténere */
+    .controls-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      background: var(--card-bg);
+      border: 2px solid #444466;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: var(--blue);
+      transform: translateY(-2px);
+    }
+
+    .btn.active {
+      background: var(--blue);
+      color: #000;
+      border-color: var(--blue);
+      box-shadow: 0 0 12px rgba(0, 210, 255, 0.5);
+    }
+
+    .btn.mode-btn.active {
+      background: var(--accent-yellow);
+      color: #000;
+      border-color: var(--accent-yellow);
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.5);
+    }
+
+    .btn.reset-btn {
+      background: #ff3366;
+      border-color: #ff3366;
+    }
+
+    .btn.reset-btn:hover {
+      background: #ff0044;
+      border-color: #ff0044;
+    }
+
+    .btn.leaderboard-btn {
+      background: #9d4edd;
+      border-color: #9d4edd;
+    }
+
+    .btn.sound-btn {
+      background: #3b3b5c;
+    }
+
+    /* Műszerfal / Statisztika */
+    .stats-bar {
+      display: flex;
+      gap: 18px;
+      background: var(--card-bg);
+      padding: 10px 22px;
+      border-radius: 50px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 65px;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: #8a8aa8;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--accent-yellow);
+    }
+
+    /* Célkijelző Kártya */
+    .display-card {
+      background: var(--card-bg);
+      border: 4px solid #3b3b5c;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 650px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+      margin-bottom: 15px;
+      transition: border-color 0.2s ease, transform 0.1s ease;
+    }
+
+    .display-card.correct {
+      border-color: var(--green);
+      transform: scale(1.02);
+    }
+
+    .display-card.wrong {
+      border-color: var(--accent);
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .prompt-label {
+      font-size: 0.95rem;
+      color: #b0b0d0;
+      margin-bottom: 6px;
+    }
+
+    .target-key-display {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: #ffffff;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a28;
+      border-radius: 14px;
+      border: 2px dashed #555577;
+      letter-spacing: 2px;
+      margin: 6px 0;
+    }
+
+    .hint-box {
+      font-size: 0.9rem;
+      color: var(--accent-yellow);
+      min-height: 20px;
+      font-weight: 600;
+    }
+
+    /* Virtuális Billentyűzet Segéd */
+    .keyboard-guide {
+      background: #181824;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid #33334d;
+      max-width: 750px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .key {
+      background: #2a2a3d;
+      color: #ccc;
+      border: 1px solid #444466;
+      border-bottom: 3px solid #11111e;
+      border-radius: 5px;
+      padding: 7px 9px;
+      min-width: 34px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: bold;
+      transition: all 0.1s ease;
+    }
+
+    .key.wide { min-width: 60px; }
+    .key.space { flex-grow: 1; max-width: 260px; }
+
+    .key.target-highlight {
+      background: var(--accent-yellow) !important;
+      color: #000 !important;
+      border-color: #ffe600 !important;
+      box-shadow: 0 0 12px rgba(255, 204, 0, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .key.shift-highlight {
+      background: var(--blue) !important;
+      color: #000 !important;
+      box-shadow: 0 0 10px rgba(0, 210, 255, 0.6);
+    }
+
+    .key.pressed {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      background: var(--green);
+      color: #000;
+    }
+
+    /* Modal / Popups */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 3px solid var(--accent-yellow);
+      border-radius: 20px;
+      padding: 25px;
+      max-width: 450px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .modal-card h2 {
+      font-size: 1.8rem;
+      color: var(--accent-yellow);
+      margin-bottom: 10px;
+    }
+
+    .modal-card p {
+      margin-bottom: 15px;
+      color: #d0d0e0;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: 2px solid #555577;
+      background: #181824;
+      color: white;
+      font-size: 1rem;
+      text-align: center;
+      margin-bottom: 15px;
+      outline: none;
+    }
+
+    .modal-input:focus {
+      border-color: var(--blue);
+    }
+
+    /* Ranglista Táblázat */
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+      font-size: 0.9rem;
+    }
+
+    .leaderboard-table th, .leaderboard-table td {
+      padding: 8px;
+      text-align: center;
+      border-bottom: 1px solid #444466;
+    }
+
+    .leaderboard-table th {
+      color: var(--blue);
+    }
+
+    footer {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #666688;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⌨️ Billentyűzet Mester</h1>
+    <p class="subtitle">Gyakorold a gombok használatát játékosan!</p>
+  </header>
+
+  <!-- Vezérlés (Módok, Szintek, Akciók) -->
+  <div class="controls-container">
+    <!-- Játékmód Választó -->
+    <div class="button-group">
+      <button class="btn mode-btn active" onclick="setMode('practice')">🏋️ Gyakorlás</button>
+      <button class="btn mode-btn" onclick="setMode('time_trial')">⏱️ 60 mp Időfutam</button>
+      <button class="btn mode-btn" onclick="setMode('sprint')">⚡ 20-as Sprint</button>
+    </div>
+
+    <!-- Szint Választó -->
+    <div class="button-group">
+      <button class="btn level-btn active" onclick="setLevel(1)">1. Szint: Alap gombok</button>
+      <button class="btn level-btn" onclick="setLevel(2)">2. Szint: Betűk & Számok</button>
+      <button class="btn level-btn" onclick="setLevel(3)">3. Szint: Nagybetűk & Ékezetek</button>
+      <button class="btn level-btn" onclick="setLevel(4)">4. Szint: Speciális jelek (!, #)</button>
+    </div>
+
+    <!-- Extra Akciók -->
+    <div class="button-group">
+      <button class="btn sound-btn" id="soundBtn" onclick="toggleSound()">🔇 Hang: KI</button>
+      <button class="btn leaderboard-btn" onclick="openLeaderboardModal()">🏆 Ranglista</button>
+      <button class="btn reset-btn" onclick="resetGame()">🔄 Újraindítás</button>
+    </div>
+  </div>
+
+  <!-- Statisztika bar -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-label" id="timerLabel">Idő</span>
+      <span class="stat-value" id="timer">00:00</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label" id="scoreLabel">Pontszám</span>
+      <span class="stat-value" id="score">0</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Sorozat</span>
+      <span class="stat-value" id="streak">0 🔥</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Pontosság</span>
+      <span class="stat-value" id="accuracy">100%</span>
+    </div>
+  </div>
+
+  <!-- Fő Kijelző Kártya -->
+  <div class="display-card" id="displayCard">
+    <div class="prompt-label" id="promptText">Nyomd meg ezt a gombot:</div>
+    <div class="target-key-display" id="targetKeyDisplay">SZÓKÖZ</div>
+    <div class="hint-box" id="hintBox">A leghosszabb gomb a billentyűzet alján!</div>
+  </div>
+
+  <!-- Vizuális Billentyűzet Segéd -->
+  <div class="keyboard-guide">
+    <div class="kb-row">
+      <div class="key" data-key="1">1</div>
+      <div class="key" data-key="2">2</div>
+      <div class="key" data-key="3">3</div>
+      <div class="key" data-key="4">4</div>
+      <div class="key" data-key="5">5</div>
+      <div class="key" data-key="6">6</div>
+      <div class="key" data-key="7">7</div>
+      <div class="key" data-key="8">8</div>
+      <div class="key" data-key="9">9</div>
+      <div class="key" data-key="0">0</div>
+      <div class="key wide" data-key="Backspace">Törlés</div>
+    </div>
+    <div class="kb-row">
+      <div class="key" data-key="q">Q</div>
+      <div class="key" data-key="w">W</div>
+      <div class="key" data-key="e">E</div>
+      <div class="key" data-key="r">R</div>
+      <div class="key" data-key="t">T</div>
+      <div class="key" data-key="z">Z</div>
+      <div class="key" data-key="u">U</div>
+      <div class="key" data-key="i">I</div>
+      <div class="key" data-key="o">O</div>
+      <div class="key" data-key="p">P</div>
+      <div class="key" data-key="ő">Ő</div>
+      <div class="key" data-key="ú">Ú</div>
+    </div>
+    <div class="kb-row">
+      <div class="key" data-key="a">A</div>
+      <div class="key" data-key="s">S</div>
+      <div class="key" data-key="d">D</div>
+      <div class="key" data-key="f">F</div>
+      <div class="key" data-key="g">G</div>
+      <div class="key" data-key="h">H</div>
+      <div class="key" data-key="j">J</div>
+      <div class="key" data-key="k">K</div>
+      <div class="key" data-key="l">L</div>
+      <div class="key" data-key="é">É</div>
+      <div class="key" data-key="á">Á</div>
+      <div class="key wide" data-key="Enter">Enter</div>
+    </div>
+    <div class="kb-row">
+      <div class="key wide" data-key="Shift">Shift ⇧</div>
+      <div class="key" data-key="y">Y</div>
+      <div class="key" data-key="x">X</div>
+      <div class="key" data-key="c">C</div>
+      <div class="key" data-key="v">V</div>
+      <div class="key" data-key="b">B</div>
+      <div class="key" data-key="n">N</div>
+      <div class="key" data-key="m">M</div>
+      <div class="key" data-key="í">Í</div>
+      <div class="key wide" data-key="Shift">Shift ⇧</div>
+    </div>
+    <div class="kb-row">
+      <div class="key space" data-key=" ">SZÓKÖZ (SPACE)</div>
+      <div class="key" data-key="ArrowLeft">◄</div>
+      <div class="key" data-key="ArrowUp">▲</div>
+      <div class="key" data-key="ArrowDown">▼</div>
+      <div class="key" data-key="ArrowRight">►</div>
+    </div>
+  </div>
+
+  <!-- Eredmény Mentése Modal -->
+  <div class="modal-overlay" id="finishModal">
+    <div class="modal-card">
+      <h2>🎉 Szép volt!</h2>
+      <p id="finishSummary">Sikeresen teljesítetted a kihívást!</p>
+      <input type="text" id="playerNameInput" class="modal-input" placeholder="Írd be a neved..." maxlength="15">
+      <button class="btn mode-btn" style="width:100%" onclick="saveScoreAndClose()">Mentés a Ranglistára</button>
+    </div>
+  </div>
+
+  <!-- Ranglista Megtekintése Modal -->
+  <div class="modal-overlay" id="leaderboardModal">
+    <div class="modal-card" style="max-width: 550px;">
+      <h2>🏆 Ranglista</h2>
+      <div class="button-group" style="margin-bottom:10px;">
+        <button class="btn level-btn active" id="lbLvl1" onclick="renderLeaderboard(1)">1. Szint</button>
+        <button class="btn level-btn" id="lbLvl2" onclick="renderLeaderboard(2)">2. Szint</button>
+        <button class="btn level-btn" id="lbLvl3" onclick="renderLeaderboard(3)">3. Szint</button>
+        <button class="btn level-btn" id="lbLvl4" onclick="renderLeaderboard(4)">4. Szint</button>
+      </div>
+      <div id="leaderboardContent">
+        <!-- Táblázat Dinamikusan -->
+      </div>
+      <button class="btn reset-btn" style="width:100%; margin-top:10px;" onclick="closeLeaderboardModal()">Bezárás</button>
+    </div>
+  </div>
+
+  <footer>Informatika órára és otthoni gyakorláshoz</footer>
+
+  <script>
+    // --- HANG GENERÁTOR ---
+    let soundEnabled = false;
+    let audioCtx = null;
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundBtn');
+      btn.innerText = soundEnabled ? '🔊 Hang: BE' : '🔇 Hang: KI';
+      btn.style.background = soundEnabled ? '#00e676' : '#3b3b5c';
+      btn.style.color = soundEnabled ? '#000' : '#fff';
+    }
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      }
+    }
+
+    // --- SZINTEK ---
+    const levels = {
+      1: [
+        { key: ' ', label: 'SZÓKÖZ', hint: 'Nyomd meg a hosszú Szóköz (Space) gombot!' },
+        { key: 'Enter', label: 'ENTER ↵', hint: 'Nyomd meg az Enter gombot!' },
+        { key: 'Backspace', label: 'TÖRLÉS ⌫', hint: 'A törlés (Backspace) gomb a jobb felső sarokban van!' },
+        { key: 'ArrowUp', label: 'FELFELÉ NYÍL ▲', hint: 'Használd a felfelé nyilat!' },
+        { key: 'ArrowDown', label: 'LEFELÉ NYÍL ▼', hint: 'Használd a lefelé nyilat!' },
+        { key: 'ArrowLeft', label: 'BALRA NYÍL ◄', hint: 'Használd a balra nyilat!' },
+        { key: 'ArrowRight', label: 'JOBBRA NYÍL ►', hint: 'Használd a jobbra nyilat!' }
+      ],
+      2: [
+        { key: 'a', label: 'a', hint: 'Keresd meg az "A" betűt!' },
+        { key: 's', label: 's', hint: 'Keresd meg az "S" betűt!' },
+        { key: 'd', label: 'd', hint: 'Keresd meg a "D" betűt!' },
+        { key: 'f', label: 'f', hint: 'Keresd meg az "F" betűt!' },
+        { key: 'j', label: 'j', hint: 'Keresd meg a "J" betűt!' },
+        { key: 'k', label: 'k', hint: 'Keresd meg a "K" betűt!' },
+        { key: 'l', label: 'l', hint: 'Keresd meg az "L" betűt!' },
+        { key: '1', label: '1', hint: 'Keresd meg az 1-es számot!' },
+        { key: '5', label: '5', hint: 'Keresd meg az 5-ös számot!' },
+        { key: '0', label: '0', hint: 'Keresd meg a 0-s számot!' }
+      ],
+      3: [
+        { key: 'A', label: 'Nagy A', hint: 'Tartsd nyomva a SHIFT-et, és nyomd meg az "A"-t!', shift: true },
+        { key: 'K', label: 'Nagy K', hint: 'Tartsd nyomva a SHIFT-et, és nyomd meg a "K"-t!', shift: true },
+        { key: 'á', label: 'á', hint: 'Magyar ékezetes betű: á' },
+        { key: 'é', label: 'é', hint: 'Magyar ékezetes betű: é' },
+        { key: 'ő', label: 'ő', hint: 'Magyar ékezetes betű: ő' },
+        { key: 'ú', label: 'ú', hint: 'Magyar ékezetes betű: ú' }
+      ],
+      4: [
+        { key: '!', label: '!', hint: 'Nyomd a SHIFT + 4-es (vagy 1-es) gombot!', shift: true },
+        { key: '#', label: '#', hint: 'Keresd meg a # (kettőskereszt) jelet!' },
+        { key: '@', label: '@', hint: 'Keresd meg a Kukac (@) jelet!' },
+        { key: '?', label: '?', hint: 'Keresd meg a Kérdőjelet (?)!' },
+        { key: '*', label: '*', hint: 'Keresd meg a Csillag (*) jelet!' }
+      ]
+    };
+
+    // --- ÁLLAPOT VÁLTOZÓK ---
+    let currentLevel = 1;
+    let currentMode = 'practice'; // 'practice', 'time_trial', 'sprint'
+    let currentTarget = null;
+    let score = 0;
+    let streak = 0;
+    let totalAttempts = 0;
+    let correctAttempts = 0;
+    let gameActive = true;
+
+    // Időzítő
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let timeRemaining = 60;
+    let timerStarted = false;
+
+    // DOM elemek
+    const displayCard = document.getElementById('displayCard');
+    const targetKeyDisplay = document.getElementById('targetKeyDisplay');
+    const hintBox = document.getElementById('hintBox');
+    const scoreEl = document.getElementById('score');
+    const streakEl = document.getElementById('streak');
+    const accuracyEl = document.getElementById('accuracy');
+    const timerEl = document.getElementById('timer');
+    const scoreLabel = document.getElementById('scoreLabel');
+    const timerLabel = document.getElementById('timerLabel');
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(mode));
+      });
+
+      if (mode === 'practice') {
+        timerLabel.innerText = 'Idő';
+        scoreLabel.innerText = 'Pontszám';
+      } else if (mode === 'time_trial') {
+        timerLabel.innerText = 'Hátralévő idő';
+        scoreLabel.innerText = 'Gombok';
+      } else if (mode === 'sprint') {
+        timerLabel.innerText = 'Eltelt Idő';
+        scoreLabel.innerText = 'Hátralévő';
+      }
+
+      resetGame();
+    }
+
+    function setLevel(lvl) {
+      currentLevel = lvl;
+      document.querySelectorAll('.level-btn').forEach((btn, idx) => {
+        if (idx < 4) btn.classList.toggle('active', idx + 1 === lvl);
+      });
+      resetGame();
+    }
+
+    function resetGame() {
+      stopTimer();
+      gameActive = true;
+      score = 0;
+      streak = 0;
+      totalAttempts = 0;
+      correctAttempts = 0;
+      secondsElapsed = 0;
+      timeRemaining = 60;
+
+      streakEl.innerText = '0 🔥';
+      accuracyEl.innerText = '100%';
+
+      if (currentMode === 'sprint') {
+        scoreEl.innerText = '20';
+      } else {
+        scoreEl.innerText = '0';
+      }
+
+      if (currentMode === 'time_trial') {
+        timerEl.innerText = '01:00';
+      } else {
+        timerEl.innerText = '00:00';
+      }
+
+      nextTask();
+    }
+
+    function startTimer() {
+      if (timerStarted || !gameActive) return;
+      timerStarted = true;
+
+      timerInterval = setInterval(() => {
+        if (currentMode === 'practice' || currentMode === 'sprint') {
+          secondsElapsed++;
+          const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+          const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+          timerEl.innerText = `${mins}:${secs}`;
+        } else if (currentMode === 'time_trial') {
+          timeRemaining--;
+          const mins = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+          const secs = (timeRemaining % 60).toString().padStart(2, '0');
+          timerEl.innerText = `${mins}:${secs}`;
+
+          if (timeRemaining <= 0) {
+            endGameChallenge('Idő lejárt!');
+          }
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerStarted = false;
+    }
+
+    function nextTask() {
+      if (!gameActive) return;
+      const pool = levels[currentLevel];
+      const randomIndex = Math.floor(Math.random() * pool.length);
+      currentTarget = pool[randomIndex];
+
+      targetKeyDisplay.innerText = currentTarget.label;
+      hintBox.innerText = currentTarget.hint || '';
+
+      updateVirtualKeyboard();
+    }
+
+    function updateVirtualKeyboard() {
+      document.querySelectorAll('.key').forEach(k => {
+        k.classList.remove('target-highlight', 'shift-highlight');
+      });
+
+      const targetChar = currentTarget.key.toLowerCase();
+      const matchingKeys = document.querySelectorAll(`.key[data-key="${currentTarget.key}"], .key[data-key="${targetChar}"]`);
+      
+      matchingKeys.forEach(k => k.classList.add('target-highlight'));
+
+      if (currentTarget.shift) {
+        document.querySelectorAll('.key[data-key="Shift"]').forEach(k => k.classList.add('shift-highlight'));
+      }
+    }
+
+    // --- BILLENTYŰ ESEMÉNYEK ---
+    window.addEventListener('keydown', (e) => {
+      if (!gameActive) return;
+
+      startTimer();
+
+      if ([' ', 'Backspace', 'Tab', 'Enter', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      const keyEl = document.querySelector(`.key[data-key="${e.key}"]`) || document.querySelector(`.key[data-key="${e.key.toLowerCase()}"]`);
+      if (keyEl) {
+        keyEl.classList.add('pressed');
+        setTimeout(() => keyEl.classList.remove('pressed'), 150);
+      }
+
+      if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt') return;
+
+      totalAttempts++;
+
+      if (e.key === currentTarget.key) {
+        correctAttempts++;
+        streak++;
+        playSound('correct');
+
+        if (currentMode === 'practice') {
+          score += 10 + (streak * 2);
+          scoreEl.innerText = score;
+        } else if (currentMode === 'time_trial') {
+          score++;
+          scoreEl.innerText = score;
+        } else if (currentMode === 'sprint') {
+          const remaining = 20 - correctAttempts;
+          scoreEl.innerText = Math.max(0, remaining);
+
+          if (remaining <= 0) {
+            endGameChallenge('Sprint Teljesítve!');
+            return;
+          }
+        }
+
+        displayCard.classList.add('correct');
+        setTimeout(() => displayCard.classList.remove('correct'), 250);
+
+        nextTask();
+      } else {
+        streak = 0;
+        playSound('wrong');
+
+        displayCard.classList.add('wrong');
+        setTimeout(() => displayCard.classList.remove('wrong'), 250);
+      }
+
+      streakEl.innerText = `${streak} 🔥`;
+      const accPercent = Math.round((correctAttempts / totalAttempts) * 100);
+      accuracyEl.innerText = `${accPercent}%`;
+    });
+
+    // --- JÁTÉK VÉGE & RANGLISTA ---
+    let lastResult = null;
+
+    function endGameChallenge(reason) {
+      stopTimer();
+      gameActive = false;
+
+      const accPercent = Math.round((correctAttempts / totalAttempts) * 100) || 0;
+      let summaryText = '';
+
+      if (currentMode === 'time_trial') {
+        summaryText = `${reason} 60 másodperc alatt ${score} helyes gombot találtál el (${accPercent}% pontosság)!`;
+        lastResult = { level: currentLevel, mode: 'time_trial', score: score, accuracy: accPercent };
+      } else if (currentMode === 'sprint') {
+        const mins = Math.floor(secondsElapsed / 60).toString().padStart(2, '0');
+        const secs = (secondsElapsed % 60).toString().padStart(2, '0');
+        summaryText = `${reason} A 20 gombot ${mins}:${secs} alatt teljesítetted (${accPercent}% pontosság)!`;
+        lastResult = { level: currentLevel, mode: 'sprint', timeSec: secondsElapsed, timeStr: `${mins}:${secs}`, accuracy: accPercent };
+      }
+
+      document.getElementById('finishSummary').innerText = summaryText;
+      document.getElementById('finishModal').classList.add('active');
+    }
+
+    function saveScoreAndClose() {
+      const name = document.getElementById('playerNameInput').value.trim() || 'Kis Mester';
+      if (lastResult) {
+        lastResult.name = name;
+        saveToLeaderboard(lastResult);
+      }
+      document.getElementById('finishModal').classList.remove('active');
+      openLeaderboardModal();
+    }
+
+    // --- LOCALSTORAGE MŰVELETEK ---
+    function getLeaderboard() {
+      return JSON.parse(localStorage.getItem('keyboard_game_lb')) || { 1: [], 2: [], 3: [], 4: [] };
+    }
+
+    function saveToLeaderboard(res) {
+      const lb = getLeaderboard();
+      if (!lb[res.level]) lb[res.level] = [];
+      lb[res.level].push(res);
+      
+      // Rendezés
+      lb[res.level].sort((a, b) => {
+        if (a.mode === 'time_trial' && b.mode === 'time_trial') return b.score - a.score;
+        if (a.mode === 'sprint' && b.mode === 'sprint') return a.timeSec - b.timeSec;
+        return 0;
+      });
+
+      // Max 10 rekord szintenként
+      lb[res.level] = lb[res.level].slice(0, 10);
+      localStorage.setItem('keyboard_game_lb', JSON.stringify(lb));
+    }
+
+    let activeLbLevel = 1;
+
+    function openLeaderboardModal() {
+      document.getElementById('leaderboardModal').classList.add('active');
+      renderLeaderboard(currentLevel);
+    }
+
+    function closeLeaderboardModal() {
+      document.getElementById('leaderboardModal').classList.remove('active');
+    }
+
+    function renderLeaderboard(lvl) {
+      activeLbLevel = lvl;
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById(`lbLvl${i}`);
+        if (btn) btn.classList.toggle('active', i === lvl);
+      }
+
+      const lb = getLeaderboard()[lvl] || [];
+      const container = document.getElementById('leaderboardContent');
+
+      if (lb.length === 0) {
+        container.innerHTML = '<p style="margin:20px 0; color:#888;">Még nincs elmentett eredmény ezen a szinten!</p>';
+        return;
+      }
+
+      let html = `
+        <table class="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Hely</th>
+              <th>Név</th>
+              <th>Mód</th>
+              <th>Eredmény</th>
+              <th>Pontosság</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      lb.forEach((entry, index) => {
+        const scoreDisplay = entry.mode === 'time_trial' ? `${entry.score} gomb` : `${entry.timeStr}`;
+        const modeDisplay = entry.mode === 'time_trial' ? '⏱️ Időfutam' : '⚡ Sprint';
+        html += `
+          <tr>
+            <td>#${index + 1}</td>
+            <td><strong>${entry.name}</strong></td>
+            <td>${modeDisplay}</td>
+            <td style="color:var(--accent-yellow); font-weight:bold;">${scoreDisplay}</td>
+            <td>${entry.accuracy}%</td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    // Indítás
+    resetGame();
+  </script>
+</body>
+</html>
